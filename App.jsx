@@ -4,7 +4,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 // ═══════════════════════════════════════════
 // GOOGLE SHEETS BACKEND
 // ═══════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe1CFxeGYxMrqszoQgtUoYqwOVzQT7DuwYqt8Oi5X-Jrxp5Ns39W7TYc1CDRIDOJpPFg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlplqYmHIQ9H-DYq0IgeYh-gcAiL9hgsnbiAN4kU22enNsabl7DvccRG3IvwZgQ_6PAg/exec";
 
 const DB = {
   getStudents: async () => {
