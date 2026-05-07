@@ -768,7 +768,6 @@ function SupervisorPortal({onLogout}) {
 function StudentModal({student,supData,onClose}) {
   const [drill,setDrill]=useState(null);
   const [aiText,setAiText]=useState(null);
-  const [aiLoad,setAiLoad]=useState(false);
   const sc=calcScores(student,supData);
   const rec=getRec(sc.suitability);
   const sup=supData?.[student.id];
@@ -781,19 +780,46 @@ function StudentModal({student,supData,onClose}) {
     {subject:"Supervisor",score:sc.supScore||0,fullMark:100},
   ];
 
-  const analyzeAI=async()=>{
-    setAiLoad(true);setAiText(null);
-    try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
-          system:"You are an educational psychologist evaluating FSc scholarship applicants in Pakistan. Analyze the student's MCQ responses and give a concise psychological assessment covering: stress resilience, discipline, empathy, leadership, and growth mindset. End with an Overall Psychology Rating /10. Be specific and constructive. Under 250 words.",
-          messages:[{role:"user",content:`Student: ${student.info.name}\nPsychology answers (score 1-4 per question, 4=most mature): ${JSON.stringify(student.psychology)}\nPersonality answers: ${JSON.stringify(student.personality)}\nHonesty answers: ${JSON.stringify(student.honesty)}\nThinking essays: ${student.thinking?.map(t=>t.answer).join(" | ")}\nProvide psychological assessment.`}]})
-      });
-      const d=await res.json();
-      setAiText(d.content?.find(b=>b.type==="text")?.text||"Analysis unavailable.");
-    }catch{setAiText("Failed to load. Try again.");}
-    setAiLoad(false);
+  const analyzeAI=()=>{
+    const psy=student.psychology||{};
+    const per=student.personality||{};
+    const hon=student.honesty||{};
+    const avg=(obj,keys)=>{const v=keys.map(k=>obj[k]||0).filter(x=>x>0);return v.length?v.reduce((a,b)=>a+b,0)/v.length:0;};
+    const lbl=(s)=>s>=3.5?"Excellent":s>=2.8?"Good":s>=2?"Average":"Needs Improvement";
+    const pct=(s)=>Math.round((s/4)*100);
+    const stress=avg(psy,["p1","p4","p6","p7"]);
+    const growth=avg(psy,["p2","p5","p8"]);
+    const social=avg(psy,["p3"]);
+    const planning=avg(per,["e1","e4","e7"]);
+    const empathy=avg(per,["e2","e5"]);
+    const leader=avg(per,["e3","e6"]);
+    const honesty=avg(hon,["h1","h3"]);
+    const gratitude=avg(hon,["h2","h4","h5"]);
+    const overall=(stress+growth+social+planning+empathy+leader+honesty+gratitude)/8;
+    const rating=Math.round(overall*2.5);
+    const report=`📊 PSYCHOLOGICAL ASSESSMENT — ${student.info.name}
+${"─".repeat(44)}
+
+🧠 STRESS & RESILIENCE: ${lbl(stress)} (${pct(stress)}%)
+${stress>=3?"Shows strong composure under pressure. Handles setbacks constructively and bounces back effectively.":stress>=2?"Manageable stress response but may struggle under high pressure. Needs better coping strategies.":"Tends to feel overwhelmed under pressure. Needs support developing emotional regulation skills."}
+
+🌱 GROWTH MINDSET: ${lbl(growth)} (${pct(growth)}%)
+${growth>=3?"Excellent learning attitude. Views failures as opportunities and persists through challenges.":growth>=2?"Some growth orientation but may give up when facing repeated setbacks.":"Fixed mindset tendencies. May avoid challenges due to fear of failure."}
+
+🤝 SOCIAL & EMPATHY: ${lbl((social+empathy)/2)} (${pct((social+empathy)/2)}%)
+${(social+empathy)/2>=3?"Strong interpersonal skills. Takes initiative socially and attentive to others' needs.":"Developing social confidence. Needs encouragement to engage with peers and show empathy."}
+
+🎯 LEADERSHIP & PLANNING: ${lbl((leader+planning)/2)} (${pct((leader+planning)/2)}%)
+${(leader+planning)/2>=3?"Natural leadership qualities and good organizational skills. Steps up when needed.":"Prefers to follow rather than lead. Planning and time management skills need development."}
+
+🤲 INTEGRITY & GRATITUDE: ${lbl((honesty+gratitude)/2)} (${pct((honesty+gratitude)/2)}%)
+${(honesty+gratitude)/2>=3?"High ethical standards. Consistently honest and genuinely appreciative of others.":"Developing integrity and gratitude. Character building should be actively encouraged."}
+
+${"─".repeat(44)}
+⭐ OVERALL RATING: ${rating}/10
+
+${rating>=8?"HIGHLY SUITABLE — Mature psychological traits and strong character. Excellent scholarship candidate.":rating>=6?"SUITABLE — Good psychological foundation with areas for growth. Recommended with mentorship.":rating>=4?"CONDITIONAL — Developing maturity. Would benefit from structured guidance throughout program.":"NEEDS DEVELOPMENT — Significant support required before scholarship consideration."}`;
+    setAiText(report);
   };
 
   const drillSecs={
@@ -944,8 +970,8 @@ function StudentModal({student,supData,onClose}) {
           )}
 
           <div style={{borderTop:"1px solid #f1f5f9",paddingTop:14}}>
-            <button onClick={analyzeAI} disabled={aiLoad} style={{width:"100%",padding:"11px",borderRadius:12,border:"none",background:aiLoad?"#e2e8f0":"linear-gradient(135deg,#7c3aed,#a855f7)",color:aiLoad?"#94a3b8":"#fff",fontSize:14,fontWeight:700,cursor:aiLoad?"not-allowed":"pointer"}}>
-              {aiLoad?"🤖 Analyzing...":"🤖 AI Psychology Analysis"}
+            <button onClick={analyzeAI} style={{width:"100%",padding:"11px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#7c3aed,#a855f7)",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              🤖 Generate Psychology Report
             </button>
             {aiText&&(
               <div style={{marginTop:12,background:"#faf5ff",borderRadius:12,padding:"14px 16px",border:"1px solid #ddd6fe"}}>
