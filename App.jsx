@@ -12,17 +12,17 @@ const DB = {
     catch { return []; }
   },
   setStudent: async (student) => {
-    await fetch(SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body:JSON.stringify({action:"setStudent",student}), redirect:"follow" });
+    await fetch(`${SCRIPT_URL}?action=setStudent&data=${encodeURIComponent(JSON.stringify(student))}`);
   },
   getSup: async () => {
     try { const r = await fetch(`${SCRIPT_URL}?action=getSup`); return await r.json(); }
     catch { return {}; }
   },
   setSup: async (studentId, supData) => {
-    await fetch(SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body:JSON.stringify({action:"setSup",studentId,supData}), redirect:"follow" });
+    await fetch(`${SCRIPT_URL}?action=setSup&studentId=${encodeURIComponent(studentId)}&data=${encodeURIComponent(JSON.stringify(supData))}`);
   },
   loadDemo: async (students, sup) => {
-    await fetch(SCRIPT_URL, { method:"POST", headers:{"Content-Type":"text/plain"}, body:JSON.stringify({action:"loadDemo",students,sup}), redirect:"follow" });
+    await fetch(`${SCRIPT_URL}?action=loadDemo&students=${encodeURIComponent(JSON.stringify(students))}&sup=${encodeURIComponent(JSON.stringify(sup))}`);
   },
   getDraft:   () => JSON.parse(localStorage.getItem("sc_draft")||"null"),
   setDraft:   (d) => localStorage.setItem("sc_draft", JSON.stringify(d)),
